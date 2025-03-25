@@ -58,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late AnimationController _controllerTimer;
   bool _timerOn = false;
   final TextEditingController _textFieldController = TextEditingController();
-  final List<Map<String, dynamic>> _causes = [
+  final List<Map<String, dynamic>> _allCauses = [
     {"error": "Luisa Vocalmic stops working", "solved": false},
     {"error": "IEM Luisa stops working", "solved": false},
     {"error": "IEM Jendrik stops working", "solved": false},
@@ -66,12 +66,39 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     {"error": "IEM Axel stops working", "solved": false},
     {"error": "IEM Freddy stops working", "solved": false},
     {"error": "MacBook stops playing", "solved": false},
-    {"error": "Freddy moves 1 beat", "solved": false}
+    {"error": "Freddy moves 1 beat", "solved": false},
+    {"error": "guitar Finn stops working", "solved": false},
+    {"error": "guitar Jendrik stops working", "solved": false},
+    {"error": "guitar Axel stops working", "solved": false}
   ];
+  late List<Map<String, dynamic>> _causes;
   Map<String, dynamic>? _currentCause;
+  bool _iemUsed = false;
+  bool _guitarUsed = false;
   final TextStyle _textStyle = TextStyle(color: Colors.grey[100]);
 
   void _startTimer() {
+    print(_causes.length);
+    _causes.clear();
+    print(_causes.length);
+
+    for (final element in _allCauses) {
+      if (element["error"].toString().contains("IEM")) {
+        if (!_iemUsed) {
+          print("_causes.add(iem)");
+          _causes.add(element);
+        }
+      } else if (element["error"].toString().contains("guitar")) {
+        if (!_guitarUsed) {
+          print("_causes.add(guitar)");
+          _causes.add(element);
+        }
+      } else {
+        _causes.add(element);
+      }
+    }
+    print(_causes.length);
+
     setState(() {
       _timerOn = true;
       _controllerTimer.forward();
@@ -88,16 +115,27 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   Future<void> _showCause() async {
     int length = _causes.length;
-    while (_timerOn && _currentCause == null) {
-      await Future.delayed(const Duration(seconds: 3));
-      int intValue = Random().nextInt(10);
-      print(intValue);
-      if (intValue % 5 == 0) {
-        setState(() {
-          _currentCause = _causes[Random().nextInt(length)];
-        });
+    print(length);
+    // Wait at least 10 minutes (600 seconds) but up to 20 minutes (1200 seconds).
+    int waitTime = 600 + Random().nextInt(601);
+    print(waitTime / 60);
+
+    var nextCause = _causes[Random().nextInt(length)];
+    print("next cause: ${nextCause["error"]}");
+
+    await Future.delayed(Duration(seconds: waitTime));
+
+    setState(() {
+      if (nextCause["error"].contains("IEM")) {
+        print("iem true");
+        _iemUsed = true;
       }
-    }
+      if (nextCause["error"].contains("guitar")) {
+        print("guitar true");
+        _guitarUsed = true;
+      }
+      _currentCause = nextCause;
+    });
   }
 
   void _solveProblem() {
@@ -143,7 +181,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 child: const Text('OK'),
                 onPressed: () {
                   setState(() {
-                    _causes.add({"error": valueText, "solved": false});
+                    _allCauses.add({"error": valueText, "solved": false});
                     Navigator.pop(context);
                   });
                 },
@@ -162,6 +200,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _causes = [..._allCauses];
     _controllerTimer = AnimationController(
         vsync: this, duration: const Duration(seconds: 2700));
   }
@@ -196,12 +235,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             ),
             _currentCause == null
                 ? TextButton(
-                    onPressed: _timerOn
-                        ? _pauseTimer
-                        : () {
-                            _startTimer();
-                            _showCause();
-                          },
+                    onPressed: _timerOn ? _pauseTimer : _startTimer,
                     style: TextButton.styleFrom(
                       textStyle: const TextStyle(fontSize: 24),
                       elevation: 10.0,
@@ -257,17 +291,19 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        elevation: 10,
-        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-        tooltip: "add causes",
-        onPressed: () {
-          _showChangeDialog(context);
-        },
-        child: const Icon(
-          Icons.add,
-        ),
-      ),
+      floatingActionButton: !_timerOn
+          ? FloatingActionButton(
+              elevation: 10,
+              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+              tooltip: "add causes",
+              onPressed: () {
+                _showChangeDialog(context);
+              },
+              child: const Icon(
+                Icons.add,
+              ),
+            )
+          : null,
     );
   }
 }
