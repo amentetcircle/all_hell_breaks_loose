@@ -78,9 +78,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   final TextStyle _textStyle = TextStyle(color: Colors.grey[100]);
 
   void _startTimer() {
-    print(_causes.length);
     _causes.clear();
-    print(_causes.length);
 
     for (final element in _allCauses) {
       if (element["error"].toString().contains("IEM")) {
